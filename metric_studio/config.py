@@ -1,14 +1,13 @@
-# metric_studio/config.py
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    anthropic_api_key: str
-    db_host: str
+    anthropic_api_key: str = ""
+    db_host: str = "localhost"
     db_port: int = 5432
-    db_name: str
-    db_user: str
-    db_password: str
+    db_name: str = ""
+    db_user: str = ""
+    db_password: str = ""
     llm_model: str = "claude-sonnet-4-6"
 
     @property
@@ -18,7 +17,7 @@ class Settings(BaseSettings):
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
 settings = Settings()

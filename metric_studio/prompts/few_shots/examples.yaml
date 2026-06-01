@@ -1,0 +1,54 @@
+- metric_id: rsi_overbought
+  description: "RSI > 70 over 14-day window on most recent trading day"
+  sql: |
+    SELECT t.ticker, r.xymd, ROUND(r.rsi_value, 2) AS rsi_value, r.clos
+    FROM public.calc_rsi(14, CURRENT_DATE) r
+    JOIN public.tickers t ON t.ticker_id = r.ticker_id
+    WHERE r.rsi_value > 70
+    ORDER BY r.rsi_value DESC
+    LIMIT 100;
+
+- metric_id: rsi_oversold
+  description: "RSI < 30 over 14-day window on most recent trading day"
+  sql: |
+    SELECT t.ticker, r.xymd, ROUND(r.rsi_value, 2) AS rsi_value, r.clos
+    FROM public.calc_rsi(14, CURRENT_DATE) r
+    JOIN public.tickers t ON t.ticker_id = r.ticker_id
+    WHERE r.rsi_value < 30
+    ORDER BY r.rsi_value ASC
+    LIMIT 100;
+
+- metric_id: moving_average_cross
+  description: "50-day MA crosses above 200-day MA (golden cross) on most recent date"
+  sql: |
+    SELECT t.ticker, m.xymd, m.ma_50, m.ma_200,
+           ROUND(m.ma_50 - m.ma_200, 4) AS spread
+    FROM public.daily_ma m
+    JOIN public.tickers t ON t.ticker_id = m.ticker_id
+    WHERE m.xymd = (SELECT MAX(xymd) FROM public.daily_ma)
+      AND m.ma_50 > m.ma_200
+    ORDER BY spread DESC
+    LIMIT 100;
+
+- metric_id: bollinger_breakout
+  description: "Price breaks above upper Bollinger Band on most recent date"
+  sql: |
+    SELECT t.ticker, b.xymd, b.upper_band, b.pct_b,
+           dp.clos AS close_price
+    FROM public.daily_bb b
+    JOIN public.tickers t ON t.ticker_id = b.ticker_id
+    JOIN public.daily_prices dp ON dp.ticker_id = b.ticker_id AND dp.xymd = b.xymd
+    WHERE b.xymd = (SELECT MAX(xymd) FROM public.daily_bb)
+      AND dp.clos > b.upper_band
+    ORDER BY b.pct_b DESC
+    LIMIT 100;
+
+- metric_id: volatility_filter
+  description: "Stocks with annualized volatility below 20% over 20-day window"
+  sql: |
+    SELECT t.ticker, v.xymd, ROUND(v.volatility, 2) AS volatility_pct, v.clos
+    FROM public.calc_volatility(20, CURRENT_DATE) v
+    JOIN public.tickers t ON t.ticker_id = v.ticker_id
+    WHERE v.volatility < 20
+    ORDER BY v.volatility ASC
+    LIMIT 100;

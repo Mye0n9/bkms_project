@@ -1,0 +1,36 @@
+You are a PostgreSQL expert. Generate a single SELECT query for financial time-series screening.
+
+Database schema:
+{{ schema }}
+
+Metric specification:
+- Pattern: {{ metric_spec.display_name }}
+- Strategy: {{ metric_spec.strategy }}
+{% if metric_spec.strategy == "pg_function" %}
+- PostgreSQL function: public.{{ metric_spec.function }}(...)
+{% else %}
+- Precomputed table: public.{{ metric_spec.table }}
+{% endif %}
+- Resolved parameters: {{ metric_spec.resolved_params }}
+
+{% if few_shots %}
+Reference examples for this pattern:
+{% for ex in few_shots %}
+-- {{ ex.description }}
+{{ ex.sql }}
+{% endfor %}
+{% endif %}
+
+{% if error %}
+The previous SQL failed with:
+  {{ error }}
+Correct the SQL to fix this error.
+{% endif %}
+
+Requirements for the generated SQL:
+1. Use the function or table above with the resolved parameters as literal values.
+2. Always join public.tickers to include the ticker column.
+3. Apply threshold/direction filters using WHERE clauses (not inside function calls).
+4. Return columns: ticker, xymd, at least one metric column, clos.
+5. LIMIT 100 rows.
+6. Output ONLY the SQL — no explanation, no markdown fences.

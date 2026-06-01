@@ -1,0 +1,195 @@
+- id: rsi_overbought
+  display_name: "RSI Overbought"
+  aliases: ["overbought", "RSI high", "relative strength overbought", "RSI above"]
+  description: "Stocks where RSI exceeds a threshold, signaling overbought condition"
+  strategy: pg_function
+  function: calc_rsi
+  params:
+    window:
+      type: integer
+      default: 14
+      clarify_if_missing: true
+      question: "How many trading days for the RSI window? (common: 14)"
+    threshold:
+      type: numeric
+      default: 70
+      clarify_if_missing: true
+      question: "What RSI value defines overbought? (common: 70)"
+    direction:
+      type: enum
+      values: [above, below]
+      default: above
+      clarify_if_missing: false
+
+- id: rsi_oversold
+  display_name: "RSI Oversold"
+  aliases: ["oversold", "RSI low", "relative strength oversold", "RSI below"]
+  description: "Stocks where RSI falls below a threshold, signaling oversold condition"
+  strategy: pg_function
+  function: calc_rsi
+  params:
+    window:
+      type: integer
+      default: 14
+      clarify_if_missing: true
+      question: "How many trading days for the RSI window? (common: 14)"
+    threshold:
+      type: numeric
+      default: 30
+      clarify_if_missing: true
+      question: "What RSI value defines oversold? (common: 30)"
+    direction:
+      type: enum
+      values: [above, below]
+      default: below
+      clarify_if_missing: false
+
+- id: macd_crossover
+  display_name: "MACD Crossover"
+  aliases: ["MACD", "MACD signal", "MACD cross", "moving average convergence"]
+  description: "Stocks where the MACD line crosses above or below the signal line"
+  strategy: pg_function
+  function: calc_macd
+  params:
+    fast:
+      type: integer
+      default: 12
+      clarify_if_missing: true
+      question: "Fast EMA period for MACD? (common: 12)"
+    slow:
+      type: integer
+      default: 26
+      clarify_if_missing: true
+      question: "Slow EMA period for MACD? (common: 26)"
+    signal:
+      type: integer
+      default: 9
+      clarify_if_missing: true
+      question: "Signal line period for MACD? (common: 9)"
+    direction:
+      type: enum
+      values: [above, below]
+      default: above
+      clarify_if_missing: true
+      question: "Should MACD line be above (bullish) or below (bearish) the signal line?"
+
+- id: momentum_screen
+  display_name: "Momentum Screen"
+  aliases: ["momentum", "strong momentum", "price momentum", "trending stocks"]
+  description: "Stocks with strong price momentum over N trading days"
+  strategy: pg_function
+  function: calc_momentum
+  params:
+    window:
+      type: integer
+      default: 20
+      clarify_if_missing: true
+      question: "How many trading days to measure momentum? (common: 20)"
+    threshold:
+      type: numeric
+      default: 5.0
+      clarify_if_missing: true
+      question: "Minimum momentum percentage to qualify? (e.g., 5 for 5%)"
+
+- id: rolling_return_rank
+  display_name: "Rolling Return Rank"
+  aliases: ["top performers", "best returns", "rolling return", "return over period"]
+  description: "Stocks ranked by rolling return over N trading days"
+  strategy: pg_function
+  function: calc_rolling_return
+  params:
+    window:
+      type: integer
+      default: 20
+      clarify_if_missing: true
+      question: "Over how many trading days to measure return? (common: 5, 10, 20, 60)"
+
+- id: volatility_filter
+  display_name: "Volatility Filter"
+  aliases: ["low volatility", "high volatility", "volatility screen", "stable stocks", "volatile stocks"]
+  description: "Stocks filtered by annualized rolling volatility"
+  strategy: pg_function
+  function: calc_volatility
+  params:
+    window:
+      type: integer
+      default: 20
+      clarify_if_missing: true
+      question: "Rolling window in trading days for volatility? (common: 20)"
+    threshold:
+      type: numeric
+      default: 20.0
+      clarify_if_missing: true
+      question: "Volatility threshold (annualized %)? (e.g., 20 for 20%)"
+    direction:
+      type: enum
+      values: [above, below]
+      clarify_if_missing: true
+      question: "Filter for stocks ABOVE (high volatility) or BELOW (low volatility) the threshold?"
+
+- id: pv_divergence
+  display_name: "Price-Volume Divergence"
+  aliases: ["divergence", "price volume divergence", "PV divergence", "volume divergence"]
+  description: "Stocks where price trend and volume trend move in opposite directions"
+  strategy: pg_function
+  function: calc_pv_divergence
+  params:
+    window:
+      type: integer
+      default: 20
+      clarify_if_missing: true
+      question: "Lookback window in trading days for divergence detection? (common: 20)"
+
+- id: moving_average_cross
+  display_name: "Moving Average Crossover"
+  aliases: ["MA cross", "golden cross", "death cross", "moving average signal", "MA crossover"]
+  description: "Stocks where a short-term MA crosses above or below a long-term MA"
+  strategy: precomputed_table
+  table: daily_ma
+  params:
+    short_window:
+      type: enum
+      values: ["5", "10", "20", "50"]
+      clarify_if_missing: true
+      question: "Short-term MA window? Choose from: 5, 10, 20, 50"
+    long_window:
+      type: enum
+      values: ["20", "50", "100", "200"]
+      clarify_if_missing: true
+      question: "Long-term MA window? Choose from: 20, 50, 100, 200"
+    direction:
+      type: enum
+      values: [above, below]
+      clarify_if_missing: true
+      question: "Short MA crossing ABOVE (bullish/golden cross) or BELOW (bearish/death cross) the long MA?"
+
+- id: bollinger_breakout
+  display_name: "Bollinger Band Breakout"
+  aliases: ["Bollinger", "Bollinger band", "BB breakout", "band breakout", "price breakout"]
+  description: "Stocks where price breaks above the upper or below the lower Bollinger Band"
+  strategy: precomputed_table
+  table: daily_bb
+  params:
+    direction:
+      type: enum
+      values: [above, below]
+      clarify_if_missing: true
+      question: "Breakout above upper band (bullish) or below lower band (bearish)?"
+
+- id: atr_filter
+  display_name: "ATR Volatility Filter"
+  aliases: ["ATR", "average true range", "ATR filter", "range filter"]
+  description: "Stocks filtered by their 14-day Average True Range relative to price"
+  strategy: precomputed_table
+  table: daily_atr
+  params:
+    threshold:
+      type: numeric
+      default: 2.0
+      clarify_if_missing: true
+      question: "ATR threshold as percentage of price? (e.g., 2 for 2%)"
+    direction:
+      type: enum
+      values: [above, below]
+      clarify_if_missing: true
+      question: "Filter for high ATR (above threshold) or low ATR (below threshold)?"
