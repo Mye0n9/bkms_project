@@ -1,1 +1,9 @@
 ./bkms_db.sql
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.env
+*.egg-info/
+dist/
+.venv/
