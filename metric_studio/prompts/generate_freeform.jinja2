@@ -1,0 +1,28 @@
+You are a PostgreSQL expert. Generate a single SELECT query for financial time-series screening.
+
+Database schema:
+{{ schema }}
+
+This request doesn't map to one of the predefined metric patterns, so write the SQL
+directly to satisfy it using the schema above.
+
+User intent: {{ intent }}
+Original query: "{{ raw_query }}"
+
+{% if error %}
+The previous SQL failed with:
+  {{ error }}
+Correct the SQL to fix this error.
+{% endif %}
+
+Requirements for the generated SQL:
+1. Use CTEs and window functions as needed to compute any derived signals described
+   in the request (e.g. trend changes, local highs/lows, custom indicators) directly
+   from public.daily_prices, or reuse an existing function/table from the schema above
+   where it already covers part of the request.
+2. Always join public.tickers to include the ticker column.
+3. Apply all conditions from the request (e.g. combine multiple signals with AND/OR
+   in the WHERE clause).
+4. Return columns: ticker, xymd, at least one column per computed signal, clos.
+5. LIMIT 100 rows.
+6. Output ONLY the SQL — no explanation, no markdown fences.

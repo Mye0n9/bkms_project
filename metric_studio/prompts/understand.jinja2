@@ -18,3 +18,8 @@ Instructions:
 1. Choose the best-matching metric id from the list above, or null if none fit.
 2. Extract any parameter values already stated in the query (e.g. "14-day RSI" → window=14, "RSI > 70" → threshold=70, "golden cross" → direction="above").
 3. Write a one-sentence description of what the user wants to find.
+4. If the query is a legitimate financial screening request but combines multiple
+   conditions or uses concepts that no single pattern above covers (e.g. "BOS during
+   bullish bias AND RSI below 50"), set metric_id to null and requires_freeform to true,
+   rather than forcing a partial match. If the query is unrelated to securities
+   screening, set metric_id to null and requires_freeform to false.

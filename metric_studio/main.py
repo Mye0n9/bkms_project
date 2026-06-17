@@ -7,7 +7,7 @@ from pipeline.state import AgentState
 from pipeline.understand import understand
 from pipeline.clarify import clarify
 from pipeline.specify import specify
-from pipeline.generate import generate
+from pipeline.generate import generate, generate_freeform
 from pipeline.execute import execute
 from pipeline.present import present
 
@@ -25,6 +25,7 @@ def run_query(raw_query: str, conversation: list, catalog: list) -> AgentState:
         "raw_query": raw_query,
         "intent": "",
         "metric_id": None,
+        "requires_freeform": False,
         "resolved_params": {},
         "unresolved_params": [],
         "metric_spec": None,
@@ -38,27 +39,34 @@ def run_query(raw_query: str, conversation: list, catalog: list) -> AgentState:
     state = understand(state, catalog)
 
     if state["metric_id"] is None:
-        console.print("[yellow]Could not match your query to a known metric pattern.[/yellow]")
-        console.print("Available: " + ", ".join(m["display_name"] for m in catalog))
-        return state
+        if not state.get("requires_freeform"):
+            console.print("[yellow]Could not match your query to a known metric pattern.[/yellow]")
+            console.print("Available: " + ", ".join(m["display_name"] for m in catalog))
+            return state
+        console.print(
+            "[dim]No preset pattern matches exactly — generating custom SQL for this request...[/dim]"
+        )
+        generate_fn = generate_freeform
+    else:
+        state = clarify(state, catalog)
 
-    state = clarify(state, catalog)
+        try:
+            state = specify(state)
+        except ValueError as exc:
+            console.print(f"[red]Error: {exc}[/red]")
+            return state
 
-    try:
-        state = specify(state)
-    except ValueError as exc:
-        console.print(f"[red]Error: {exc}[/red]")
-        return state
+        generate_fn = generate
 
     console.print("[dim]Generating SQL...[/dim]")
-    state = generate(state)
+    state = generate_fn(state)
 
     console.print("[dim]Executing query...[/dim]")
     state = execute(state)
 
     if state["execution_error"]:
         console.print("[yellow]Query error — attempting self-correction...[/yellow]")
-        state = generate(state)
+        state = generate_fn(state)
         state = execute(state)
 
     if state["execution_error"]:
