@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .env
+metric_studio/.env
 *.egg-info/
 dist/
 .venv/

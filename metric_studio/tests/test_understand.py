@@ -49,6 +49,17 @@ def test_understand_returns_none_metric_id_when_no_match():
     assert result["requires_freeform"] is False
 
 
+def test_understand_requests_structured_output_via_function_calling():
+    mock_llm = _mock_llm("rsi_overbought", {"window": 14})
+    with patch("pipeline.understand.get_llm", return_value=mock_llm):
+        state = {"raw_query": "Find overbought stocks RSI 14-day", "conversation": []}
+        understand(state, catalog=MOCK_CATALOG)
+
+    mock_llm.with_structured_output.assert_called_once_with(
+        UnderstandOutput, method="function_calling"
+    )
+
+
 def test_understand_flags_requires_freeform_for_complex_query():
     with patch(
         "pipeline.understand.get_llm",

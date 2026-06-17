@@ -43,7 +43,9 @@ def understand(state: AgentState, catalog: list[dict] | None = None) -> AgentSta
     )
 
     llm = get_llm()
-    output: UnderstandOutput = llm.with_structured_output(UnderstandOutput).invoke(prompt_text)
+    output: UnderstandOutput = llm.with_structured_output(
+        UnderstandOutput, method="function_calling"
+    ).invoke(prompt_text)
 
     unresolved: list[str] = []
     if output.metric_id:
