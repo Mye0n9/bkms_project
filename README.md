@@ -2,7 +2,7 @@
 
 A CLI-based NL2SQL agent for time-series securities screening. Type a natural-language query about stocks — the system resolves your intent, asks clarifying questions if needed, generates PostgreSQL SQL, executes it against a live database, and renders the results as a formatted table.
 
-**Team:** Rian Kim, Myeongseop Kim, Hyeonggeun Jeon
+**Team:** Reeahn Kim, Myeongseop Kim, Hyeonggeun Jeon
 
 ---
 

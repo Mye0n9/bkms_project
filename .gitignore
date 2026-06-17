@@ -8,3 +8,5 @@ __pycache__/
 dist/
 .venv/
 bkms_db.sql
+metric_studio/.venv_test
+.claude

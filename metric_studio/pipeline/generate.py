@@ -1,10 +1,9 @@
 from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from pipeline.state import AgentState
-from config import settings
+from pipeline.llm import get_llm
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -36,10 +35,27 @@ def _schema_context(metric_spec: dict) -> str:
     return "\n".join(lines)
 
 
+def _full_schema_context() -> str:
+    return "\n".join(SCHEMA.values())
+
+
 def _load_few_shots(metric_id: str) -> list[dict]:
     path = PROMPTS_DIR / "few_shots" / "examples.yaml"
     all_examples = yaml.safe_load(path.read_text())
     return [ex for ex in all_examples if ex["metric_id"] == metric_id]
+
+
+def _strip_markdown_fences(sql: str) -> str:
+    if sql.startswith("```"):
+        sql = "\n".join(sql.split("\n")[1:])
+        sql = sql.rstrip("`").strip()
+    return sql
+
+
+def _invoke_llm(prompt_text: str) -> str:
+    llm = get_llm()
+    response = llm.invoke([HumanMessage(content=prompt_text)])
+    return _strip_markdown_fences(response.content.strip())
 
 
 def generate(state: AgentState) -> AgentState:
@@ -54,12 +70,18 @@ def generate(state: AgentState) -> AgentState:
         error=state.get("execution_error", ""),
     )
 
-    llm = ChatAnthropic(model=settings.llm_model, api_key=settings.anthropic_api_key)
-    response = llm.invoke([HumanMessage(content=prompt_text)])
-    sql = response.content.strip()
+    return {**state, "sql": _invoke_llm(prompt_text), "execution_error": None}
 
-    if sql.startswith("```"):
-        sql = "\n".join(sql.split("\n")[1:])
-        sql = sql.rstrip("`").strip()
 
-    return {**state, "sql": sql, "execution_error": None}
+def generate_freeform(state: AgentState) -> AgentState:
+    env = Environment(loader=FileSystemLoader(str(PROMPTS_DIR)))
+    template = env.get_template("generate_freeform.jinja2")
+
+    prompt_text = template.render(
+        schema=_full_schema_context(),
+        intent=state.get("intent", ""),
+        raw_query=state.get("raw_query", ""),
+        error=state.get("execution_error", ""),
+    )
+
+    return {**state, "sql": _invoke_llm(prompt_text), "execution_error": None}

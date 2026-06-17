@@ -5,6 +5,7 @@ class AgentState(TypedDict, total=False):
     raw_query: str
     intent: str
     metric_id: str | None
+    requires_freeform: bool
     resolved_params: dict[str, Any]
     unresolved_params: list[str]
     metric_spec: dict | None

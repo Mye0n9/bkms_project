@@ -67,8 +67,8 @@ def _mock_db_engine():
 
 def test_full_pipeline_returns_dataframe():
     with (
-        patch("pipeline.understand.ChatAnthropic", return_value=_mock_understand()),
-        patch("pipeline.generate.ChatAnthropic", return_value=_mock_generate()),
+        patch("pipeline.understand.get_llm", return_value=_mock_understand()),
+        patch("pipeline.generate.get_llm", return_value=_mock_generate()),
         patch("pipeline.execute.create_engine", return_value=_mock_db_engine()),
     ):
         state = run_query("Find overbought stocks", [], CATALOG)
@@ -77,3 +77,71 @@ def test_full_pipeline_returns_dataframe():
     assert isinstance(state["result"], pd.DataFrame)
     assert state["execution_error"] is None
     assert state["result"].iloc[0]["ticker"] == "AAPL"
+
+
+FREEFORM_SQL = (
+    "WITH swings AS (SELECT ticker_id, xymd, clos FROM public.daily_prices "
+    "WHERE xymd > CURRENT_DATE - 90) SELECT t.ticker, s.xymd, s.clos FROM swings s "
+    "JOIN public.tickers t ON t.ticker_id = s.ticker_id LIMIT 100;"
+)
+
+
+def _mock_understand_freeform():
+    output = UnderstandOutput(
+        intent="Find tickers with a structure break during a bullish bias and RSI under 50",
+        metric_id=None,
+        resolved_params={},
+        requires_freeform=True,
+    )
+    structured = MagicMock()
+    structured.invoke.return_value = output
+    llm = MagicMock()
+    llm.with_structured_output.return_value = structured
+    return llm
+
+
+def _mock_generate_freeform():
+    response = MagicMock()
+    response.content = FREEFORM_SQL
+    llm = MagicMock()
+    llm.invoke.return_value = response
+    return llm
+
+
+def test_full_pipeline_freeform_path_returns_dataframe():
+    complex_query = (
+        "Based on recent 90 days, find a ticker that BOS during Bullish Bias "
+        "and has RSI less than 50."
+    )
+    with (
+        patch("pipeline.understand.get_llm", return_value=_mock_understand_freeform()),
+        patch("pipeline.generate.get_llm", return_value=_mock_generate_freeform()),
+        patch("pipeline.execute.create_engine", return_value=_mock_db_engine()),
+    ):
+        state = run_query(complex_query, [], CATALOG)
+
+    assert state["metric_id"] is None
+    assert state["metric_spec"] is None
+    assert state["sql"] == FREEFORM_SQL
+    assert state["execution_error"] is None
+    assert isinstance(state["result"], pd.DataFrame)
+
+
+def test_full_pipeline_no_match_no_freeform_skips_generation():
+    output = UnderstandOutput(
+        intent="Unrelated request",
+        metric_id=None,
+        resolved_params={},
+        requires_freeform=False,
+    )
+    structured = MagicMock()
+    structured.invoke.return_value = output
+    llm = MagicMock()
+    llm.with_structured_output.return_value = structured
+
+    with patch("pipeline.understand.get_llm", return_value=llm):
+        state = run_query("What's the weather today?", [], CATALOG)
+
+    assert state["metric_id"] is None
+    assert state["sql"] is None
+    assert state["result"] is None

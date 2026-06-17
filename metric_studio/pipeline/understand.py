@@ -1,10 +1,9 @@
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
-from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel, Field
 from pipeline.state import AgentState
 from pipeline.specify import load_catalog, find_metric, get_unresolved_params
-from config import settings
+from pipeline.llm import get_llm
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -15,6 +14,14 @@ class UnderstandOutput(BaseModel):
     resolved_params: dict = Field(
         default_factory=dict,
         description="Parameter values already present in the query",
+    )
+    requires_freeform: bool = Field(
+        default=False,
+        description=(
+            "True when the query is a legitimate financial screening request "
+            "but doesn't map to a single catalog pattern (e.g. it combines "
+            "multiple conditions or uses concepts not in the catalog)"
+        ),
     )
 
 
@@ -35,10 +42,7 @@ def understand(state: AgentState, catalog: list[dict] | None = None) -> AgentSta
         conversation=state.get("conversation", []),
     )
 
-    llm = ChatAnthropic(
-        model=settings.llm_model,
-        api_key=settings.anthropic_api_key,
-    )
+    llm = get_llm()
     output: UnderstandOutput = llm.with_structured_output(UnderstandOutput).invoke(prompt_text)
 
     unresolved: list[str] = []
@@ -53,4 +57,5 @@ def understand(state: AgentState, catalog: list[dict] | None = None) -> AgentSta
         "metric_id": output.metric_id,
         "resolved_params": output.resolved_params,
         "unresolved_params": unresolved,
+        "requires_freeform": output.requires_freeform,
     }
