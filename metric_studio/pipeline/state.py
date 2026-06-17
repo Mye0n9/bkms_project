@@ -13,3 +13,4 @@ class AgentState(TypedDict, total=False):
     result: Any
     execution_error: str | None
     conversation: list[dict]
+    verbose: bool

@@ -52,10 +52,16 @@ def _strip_markdown_fences(sql: str) -> str:
     return sql
 
 
-def _invoke_llm(prompt_text: str) -> str:
+def _invoke_llm(prompt_text: str, verbose: bool = False) -> str:
     llm = get_llm()
     response = llm.invoke([HumanMessage(content=prompt_text)])
-    return _strip_markdown_fences(response.content.strip())
+    raw = response.content.strip()
+    if verbose:
+        print("\n[VERBOSE] GENERATE — raw LLM response:")
+        print("-"*60)
+        print(raw)
+        print("="*60 + "\n")
+    return _strip_markdown_fences(raw)
 
 
 def generate(state: AgentState) -> AgentState:
@@ -70,7 +76,15 @@ def generate(state: AgentState) -> AgentState:
         error=state.get("execution_error", ""),
     )
 
-    return {**state, "sql": _invoke_llm(prompt_text), "execution_error": None}
+    verbose = state.get("verbose", False)
+    if verbose:
+        print("\n" + "="*60)
+        print("[VERBOSE] GENERATE — prompt sent to LLM:")
+        print("-"*60)
+        print(prompt_text)
+        print("="*60)
+
+    return {**state, "sql": _invoke_llm(prompt_text, verbose=verbose), "execution_error": None}
 
 
 def generate_freeform(state: AgentState) -> AgentState:
@@ -84,4 +98,12 @@ def generate_freeform(state: AgentState) -> AgentState:
         error=state.get("execution_error", ""),
     )
 
-    return {**state, "sql": _invoke_llm(prompt_text), "execution_error": None}
+    verbose = state.get("verbose", False)
+    if verbose:
+        print("\n" + "="*60)
+        print("[VERBOSE] GENERATE FREEFORM — prompt sent to LLM:")
+        print("-"*60)
+        print(prompt_text)
+        print("="*60)
+
+    return {**state, "sql": _invoke_llm(prompt_text, verbose=verbose), "execution_error": None}

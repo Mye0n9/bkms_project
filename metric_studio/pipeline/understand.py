@@ -42,10 +42,26 @@ def understand(state: AgentState, catalog: list[dict] | None = None) -> AgentSta
         conversation=state.get("conversation", []),
     )
 
+    verbose = state.get("verbose", False)
+    if verbose:
+        print("\n" + "="*60)
+        print("[VERBOSE] UNDERSTAND — prompt sent to LLM:")
+        print("-"*60)
+        print(prompt_text)
+        print("="*60)
+
     llm = get_llm()
     output: UnderstandOutput = llm.with_structured_output(
         UnderstandOutput, method="function_calling"
     ).invoke(prompt_text)
+
+    if verbose:
+        print("\n[VERBOSE] UNDERSTAND — LLM structured output:")
+        print(f"  intent:           {output.intent}")
+        print(f"  metric_id:        {output.metric_id}")
+        print(f"  resolved_params:  {output.resolved_params}")
+        print(f"  requires_freeform:{output.requires_freeform}")
+        print("="*60 + "\n")
 
     unresolved: list[str] = []
     if output.metric_id:

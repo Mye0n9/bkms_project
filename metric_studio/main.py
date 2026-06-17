@@ -1,3 +1,4 @@
+import argparse
 import sys
 from pathlib import Path
 import yaml
@@ -20,7 +21,7 @@ def load_catalog() -> list[dict]:
         return yaml.safe_load(f)
 
 
-def run_query(raw_query: str, conversation: list, catalog: list) -> AgentState:
+def run_query(raw_query: str, conversation: list, catalog: list, verbose: bool = False) -> AgentState:
     state: AgentState = {
         "raw_query": raw_query,
         "intent": "",
@@ -33,6 +34,7 @@ def run_query(raw_query: str, conversation: list, catalog: list) -> AgentState:
         "result": None,
         "execution_error": None,
         "conversation": conversation,
+        "verbose": verbose,
     }
 
     console.print("[dim]Analyzing query...[/dim]")
@@ -78,10 +80,16 @@ def run_query(raw_query: str, conversation: list, catalog: list) -> AgentState:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Metric Studio NL2SQL Agent")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Print LLM prompts and outputs at each pipeline stage")
+    args = parser.parse_args()
+
     catalog = load_catalog()
     conversation: list[dict] = []
 
     console.print("[bold]Metric Studio[/bold] — NL2SQL Agent for Securities Time-Series")
+    if args.verbose:
+        console.print("[dim](verbose mode on — printing LLM prompts and outputs)[/dim]")
     console.print("Type your query, or 'exit' to quit.\n")
 
     while True:
@@ -98,7 +106,7 @@ def main() -> None:
         if not raw_query:
             continue
 
-        state = run_query(raw_query, conversation, catalog)
+        state = run_query(raw_query, conversation, catalog, verbose=args.verbose)
 
         if state.get("sql"):
             conversation.append({"role": "user", "content": raw_query})
