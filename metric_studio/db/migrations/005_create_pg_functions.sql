@@ -171,7 +171,7 @@ LANGUAGE sql STABLE AS $$
         WHERE log_ret IS NOT NULL
     )
     SELECT rv.ticker_id, rv.xymd,
-           ROUND(rv.volatility * SQRT(252) * 100, 4) AS volatility,
+           ROUND((rv.volatility * SQRT(252) * 100)::numeric, 4) AS volatility,
            rv.clos
     FROM rolling_vol rv
     JOIN public.tickers t ON t.ticker_id = rv.ticker_id
