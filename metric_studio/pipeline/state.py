@@ -12,5 +12,6 @@ class AgentState(TypedDict, total=False):
     sql: str | None
     result: Any
     execution_error: str | None
+    is_connection_error: bool
     conversation: list[dict]
     verbose: bool

@@ -33,6 +33,7 @@ def run_query(raw_query: str, conversation: list, catalog: list, verbose: bool =
         "sql": None,
         "result": None,
         "execution_error": None,
+        "is_connection_error": False,
         "conversation": conversation,
         "verbose": verbose,
     }
@@ -66,7 +67,7 @@ def run_query(raw_query: str, conversation: list, catalog: list, verbose: bool =
     console.print("[dim]Executing query...[/dim]")
     state = execute(state)
 
-    if state["execution_error"]:
+    if state["execution_error"] and not state.get("is_connection_error"):
         console.print("[yellow]Query error — attempting self-correction...[/yellow]")
         state = generate_fn(state)
         state = execute(state)

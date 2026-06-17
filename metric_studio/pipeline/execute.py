@@ -1,5 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
 from pipeline.state import AgentState
 from config import settings
 
@@ -21,7 +22,11 @@ def execute(state: AgentState) -> AgentState:
         if verbose:
             print(f"[VERBOSE] EXECUTE — {len(df)} rows returned.\n")
         return {**state, "result": df, "execution_error": None}
+    except OperationalError as exc:
+        if verbose:
+            print(f"[VERBOSE] EXECUTE — error: {exc}\n")
+        return {**state, "result": None, "execution_error": str(exc), "is_connection_error": True}
     except Exception as exc:
         if verbose:
             print(f"[VERBOSE] EXECUTE — error: {exc}\n")
-        return {**state, "result": None, "execution_error": str(exc)}
+        return {**state, "result": None, "execution_error": str(exc), "is_connection_error": False}
