@@ -11,3 +11,4 @@ dist/
 bkms_db.sql
 metric_studio/.venv_test
 .claude
+jhg_db_backup.sql
