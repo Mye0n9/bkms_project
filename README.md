@@ -39,7 +39,7 @@ User query
     │
     ▼
 ┌──────────────┐
-│  UNDERSTAND  │  Claude matches the query to a metric pattern and extracts
+│  UNDERSTAND  │  The LLM matches the query to a metric pattern and extracts
 │              │  any parameters already stated in the query
 └──────┬───────┘
        │
@@ -57,7 +57,7 @@ User query
        │
        ▼
 ┌──────────────┐
-│   GENERATE   │  Claude receives the MetricSpec + schema context + few-shot
+│   GENERATE   │  The LLM receives the MetricSpec + schema context + few-shot
 │              │  SQL examples and writes the parameterized PostgreSQL query.
 └──────┬───────┘
        │
@@ -82,7 +82,7 @@ User query
 |---|---|
 | Language | Python 3.11 |
 | LLM framework | LangChain 0.3.x |
-| LLM | Claude (claude-sonnet-4-6 via `langchain-anthropic`) |
+| LLM | OpenAI (gpt-5.4-mini via `langchain-openai`); Claude (`langchain-anthropic`) also supported via `LLM_PROVIDER` |
 | Database | PostgreSQL 16 + TimescaleDB |
 | DB client | SQLAlchemy 2.x + psycopg2 |
 | Data | pandas |
@@ -228,7 +228,7 @@ psql -U jhg_user -d your_db_name -f metric_studio/db/migrations/005_create_pg_fu
 cd metric_studio && conda run -n bkms python -m db.batch.update_precomputed --full
 
 # 6. Run tests
-conda run -n bkms pytest tests/ -v   # expects 21 passed
+conda run -n bkms pytest tests/ -v   # expects 29 passed
 
 # 7. Launch
 conda run -n bkms python main.py
@@ -246,5 +246,5 @@ conda run -n bkms pytest tests/ -v
 All tests mock the LLM and database — no live credentials needed.
 
 ```
-21 passed in 1.07s
+29 passed in 1.63s
 ```

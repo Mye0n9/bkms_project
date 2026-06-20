@@ -11,7 +11,7 @@ Step-by-step guide for first-time setup and daily operation.
 | Python | 3.11+ |
 | Conda environment | `bkms` |
 | PostgreSQL + TimescaleDB | 16 |
-| Anthropic API key | any valid `sk-ant-...` key |
+| OpenAI API key | any valid `sk-...` key (current default provider; Anthropic `sk-ant-...` also supported via `LLM_PROVIDER=anthropic`) |
 
 ---
 
@@ -26,14 +26,17 @@ cp metric_studio/.env.example metric_studio/.env
 Edit `metric_studio/.env`:
 
 ```env
-ANTHROPIC_API_KEY=sk-ant-your-key-here
+OPENAI_API_KEY=sk-your-key-here
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=your_db_name
 DB_USER=jhg_user
 DB_PASSWORD=your_password
-LLM_MODEL=claude-sonnet-4-6
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-5.4-mini
 ```
+
+> To use Claude instead, set `LLM_PROVIDER=anthropic`, `LLM_MODEL=claude-sonnet-4-6`, and supply `ANTHROPIC_API_KEY` instead.
 
 > All commands below assume you are in `/home/rlaaudtjq0201/bkms_project`.
 
@@ -49,7 +52,7 @@ pip install -r metric_studio/requirements.txt
 Verify:
 
 ```bash
-python -c "import langchain_anthropic, sqlalchemy, rich; print('OK')"
+python -c "import langchain_openai, sqlalchemy, rich; print('OK')"
 ```
 
 ---
@@ -124,14 +127,14 @@ Expected: all four tables have > 0 rows.
 
 ## Step 6 — Run Tests
 
-Confirm all 21 unit + integration tests pass before using the CLI:
+Confirm all 29 unit + integration tests pass before using the CLI:
 
 ```bash
 cd metric_studio
 conda run -n bkms pytest tests/ -v
 ```
 
-Expected: `21 passed`.
+Expected: `29 passed`.
 
 ---
 
@@ -224,5 +227,5 @@ The batch job has not been run yet, or ran before the migration was applied. Re-
 | `metric_studio/db/batch/update_precomputed.py` | Nightly batch populate script |
 | `metric_studio/pipeline/` | 6 pipeline stage modules |
 | `metric_studio/prompts/` | Jinja2 templates + few-shot SQL examples |
-| `metric_studio/tests/` | 21 unit + integration tests |
+| `metric_studio/tests/` | 29 unit + integration tests |
 | `metric_studio/main.py` | CLI entry point |
